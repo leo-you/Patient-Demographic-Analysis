@@ -1,0 +1,7 @@
+name: "Patient-Demographic-Analysis"
+output_dir: "."
+navbar:
+  title: "Patient Demographic Analysis"
+  left:
+    - text: "Home"
+      href: index.html

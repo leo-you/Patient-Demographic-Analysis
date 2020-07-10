@@ -4,7 +4,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE,echo=FALSE,error=FALSE,warning=FALSE,message=FALSE}
-knitr::opts_chunk$set(error = FALSE,warning = FALSE,message = FALSE,echo = FALSE)
+knitr::opts_chunk$set(error = FALSE,warning = FALSE,message = FALSE,echo = TRUE)
 
 ```
 
@@ -67,8 +67,8 @@ library(yardstick)
 
 Patient_Demographic_Analysis <- read_csv("Patient Demographic Analysis.csv")
 datatable(Patient_Demographic_Analysis[1:1000,-1],extensions = 'Scroller', rownames = FALSE,
-          options = list(deferRender = TRUE,scroller = TRUE, scrollX = TRUE,scrollY = "500px"))
-
+          options = list(deferRender = TRUE,scroller = TRUE, scrollX = TRUE,scrollY = "500px")) %>%
+  formatDate(c("CreateDate","date_of_birth"))
 ```
 
 ## Data Cleanning
@@ -90,11 +90,9 @@ Patient_Demographic_Analysis_cleaned <- Patient_Demographic_Analysis %>%
          Nextgen_Financial_Class = as.factor(Nextgen_Financial_Class),
          Booked = as.factor(Booked),
          Kept = as.factor(Kept)) %>%
-  filter(Distance <= 50 & age < 100 & age > 10)
-
+  filter(Distance <= 50 & age < 100 & age > 10 & Nextgen_Financial_Class != "WC / Auto")
 datatable(Patient_Demographic_Analysis_cleaned[1:1000,],extensions = 'Scroller', rownames = FALSE,
           options = list(deferRender = TRUE,scroller = TRUE, scrollX = TRUE,scrollY = "500px"))
-
 ```
 
 
@@ -114,12 +112,10 @@ We start with numeric variables: **age** and **distance**
 We can see that the distance is highly right skewed, which means that there are more patients towards the lower value.
 
 ```{r}
-
 none <- element_blank()
 formatter <- function(...){
   function(x) format(round(x, 0), ...)
 }
-
 ggplot(Patient_Demographic_Analysis_cleaned,aes(x = Distance)) + 
   geom_histogram() +   
   labs(title="Patient distance to clinic Histogram",
@@ -136,10 +132,9 @@ ggplot(Patient_Demographic_Analysis_cleaned,aes(x = Distance)) +
         plot.title = element_text(face = "bold",size=9,hjust=0.5),
         plot.caption = element_text(hjust = 0)
   )
-
 ```
 
-Then we want to explore how much the mean of distance is different when patient booked appointment or when they don't.
+Then we want to explore how much the meadian of **distance** is different when patient booked appointment or when they don't.
 
 For this, we are using boxplot to visualize the data.
 Below is a brief instruction on how to read a boxplot
@@ -163,7 +158,6 @@ Definitions
 
 
 ```{r}
-
 ggplot(Patient_Demographic_Analysis_cleaned,aes(x = Booked, y = Distance)) + 
   geom_boxplot() +   
   labs(title="Patient distance to clinic By Booked",
@@ -181,12 +175,11 @@ ggplot(Patient_Demographic_Analysis_cleaned,aes(x = Booked, y = Distance)) +
         plot.caption = element_text(hjust = 0)
   ) + 
   scale_x_discrete(labels = c("Not Booked","Booked"))
-
 ```
 
-From the boxplot above, we can see that on average, patients that end up didn't book appointments lives further than those who book appointment. The median distance for those not booked is higher than those who booked.
+From the boxplot above, we can see that there are not much difference in distance for those who booked appointments and those who doesn't.
 
-Then we look at the same for age.
+Then we look at the same for **age**.
 
 First we look at the distribution of patient age, we can see from the histogram that age follows a normal distribution with a mean in the high 50s. 
 
@@ -208,13 +201,11 @@ ggplot(Patient_Demographic_Analysis_cleaned,aes(x = age)) +
         plot.title = element_text(face = "bold",size=9,hjust=0.5),
         plot.caption = element_text(hjust = 0)
   )
-
 ```
 
 
 
 ```{r}
-
 ggplot(Patient_Demographic_Analysis_cleaned,aes(x = Booked, y = age)) + 
   geom_boxplot() +   
   labs(title="Patient age By Booked",
@@ -232,7 +223,6 @@ ggplot(Patient_Demographic_Analysis_cleaned,aes(x = Booked, y = age)) +
         plot.caption = element_text(hjust = 0)
   ) + 
   scale_x_discrete(labels = c("Not Booked","Booked"))
-
 ```
 
 
@@ -258,8 +248,9 @@ p1 <- ggplot(Patient_Demographic_Analysis_cleaned, aes(Booked)) +
         plot.caption = element_text(hjust = 0)
   ) + 
   scale_x_discrete(labels = c("Not Booked","Booked")) +
-  scale_fill_discrete(name = "Language")
-
+  scale_fill_discrete(name = "Language") +
+  scale_y_continuous(labels = scales::percent)
+  
 p2 <- ggplot(Patient_Demographic_Analysis_cleaned, aes(Booked)) + 
     geom_bar(aes(y = (..count..),fill = gender),position="fill") +   
   labs(title="Count % of Gender by Booked",
@@ -277,7 +268,8 @@ p2 <- ggplot(Patient_Demographic_Analysis_cleaned, aes(Booked)) +
         plot.caption = element_text(hjust = 0)
   ) + 
   scale_x_discrete(labels = c("Not Booked","Booked")) +
-  scale_fill_discrete(name = "Gender")
+  scale_fill_discrete(name = "Gender") +
+  scale_y_continuous(labels = scales::percent)
 
 p3 <- ggplot(Patient_Demographic_Analysis_cleaned, aes(Booked)) + 
     geom_bar(aes(y = (..count..),fill = Marketing_Source),position="fill") +   
@@ -296,7 +288,9 @@ p3 <- ggplot(Patient_Demographic_Analysis_cleaned, aes(Booked)) +
         plot.caption = element_text(hjust = 0)
   ) + 
   scale_x_discrete(labels = c("Not Booked","Booked")) +
-  scale_fill_discrete(name = "Source")
+  scale_fill_discrete(name = "Source") +
+  scale_y_continuous(labels = scales::percent)
+
 
 p4 <- ggplot(Patient_Demographic_Analysis_cleaned, aes(Booked)) + 
     geom_bar(aes(y = (..count..),fill = Nextgen_Financial_Class),position="fill") +   
@@ -315,41 +309,35 @@ p4 <- ggplot(Patient_Demographic_Analysis_cleaned, aes(Booked)) +
         plot.caption = element_text(hjust = 0)
   ) + 
   scale_x_discrete(labels = c("Not Booked","Booked")) +
-  scale_fill_discrete(name = "Insurance")
+  scale_fill_discrete(name = "Insurance") + 
+  scale_fill_brewer(palette="Spectral") +
+  scale_y_continuous(labels = scales::percent)
 
 grid.arrange(p1, p2, p3, p4, ncol=2)
 ```
 
 From the barplot above, we can see that:
 
-* Spanish patients are more likely to book appointments as more % of spanish speaking patients are in the booked group than not booked group
+* Spanish patients are more likely to book appointments as more % of Spanish speaking patients are in the booked group than not booked group
 * Although female is the majority of patient population, looks like more male are booking appointment than they are not
-* physician referral, referral friend/family and iinternet  have seen an increase % in booked group
-* Most self pay patients are not booking appointments,more medicare patients are booking appointments
+* physician referral, referral friend/family and internet have seen an increase % in booked group
+* Most self pay patients are not booking appointments,more medicare patients are booking appointments. On the other hand, Medicare, Commercial have more booking patients then not booking patients
 
 
 ## Model Training
 
-Now that we have a better understanding of the data, we can start to build the model. The goal of the model is to use the training data to build a logistic regression model to predict whether a patient will book a appointment or not based on the demographic information given in the dataset.
+Now that we have a better understanding of the data, we can start to build the model. The goal of the model is to use the training data to build a logistic regression model to predict whether a patient will book a appointment or not based on the demographic information given in the data.
 
 ```{r}
 set.seed(100)
-
 trainingRows <- sample(1:nrow(Patient_Demographic_Analysis_cleaned), 0.7*nrow(Patient_Demographic_Analysis_cleaned))
 training <- Patient_Demographic_Analysis_cleaned[trainingRows, ]
 test <- Patient_Demographic_Analysis_cleaned[-trainingRows, ]
-
-
 model_booked <- glm(Booked ~ age + language + gender + Marketing_Source + Distance + Nextgen_Financial_Class, 
                          data = training,family = "binomial") 
-
 output_booked <- summary(model_booked)
-
 output_booked
-
 # stargazer(model_booked,type = "text")
-
-
 ```
 
 From the model output, we can see that most of the variables are statistically significant as the p values are less than 0.01.
@@ -361,19 +349,16 @@ For numeric variables, we can see that:
 
 For categorical variables, we want to plot bar plot to see how each level compare to their base level
 
-For gender, since there's only two levels and the base level is Female and the coefficient for male is negative, we can conclude that male has a lower probability to book appointment than female
+For gender, since there's only two levels and the base level is Female and the coefficient for male is negative, we can conclude that male has a lower probability to book appointment compare to female
 
 ```{r fig.width=12, fig.height=8}
-
 marketing_source <- as.data.frame(model_booked$coefficients[6:9]) %>%
   tibble::rownames_to_column("Marketing_Source") %>%
   rename(value = 2) %>%
   mutate(Marketing_Source = substr(Marketing_Source,17,nchar(Marketing_Source)))
-
 # View(marketing_source)
-
 p1 <- ggplot(marketing_source,aes(x = reorder(Marketing_Source,-value), y = value)) + 
-  geom_bar(stat="identity") + 
+  geom_bar(stat="identity",fill = "blue") + 
   labs(title="Marketing source coefficient importance",
        x ="Marketing Source", y = "") +
   theme(legend.position = "right",
@@ -388,16 +373,13 @@ p1 <- ggplot(marketing_source,aes(x = reorder(Marketing_Source,-value), y = valu
         plot.title = element_text(face = "bold",size=9,hjust=0.5),
         plot.caption = element_text(hjust = 0)
   ) 
-
-insurance <- as.data.frame(model_booked$coefficients[11:19]) %>%
+insurance <- as.data.frame(model_booked$coefficients[11:18]) %>%
   tibble::rownames_to_column("Insurance") %>%
   rename(value = 2) %>%
   mutate(Insurance = substr(Insurance,24,nchar(Insurance)))
-
 # View(marketing_source)
-
 p2 <- ggplot(insurance,aes(x = reorder(Insurance,-value), y = value)) + 
-  geom_bar(stat="identity") + 
+  geom_bar(stat="identity",fill = "red") + 
   labs(title="Insurance coefficient importance",
        x ="Insurance", y = "") +
   theme(legend.position = "right",
@@ -412,19 +394,17 @@ p2 <- ggplot(insurance,aes(x = reorder(Insurance,-value), y = value)) +
         plot.title = element_text(face = "bold",size=9,hjust=0.5),
         plot.caption = element_text(hjust = 0)
   ) 
-
 grid.arrange(p1,p2,ncol = 2)
-
 ```
 
 From the barplot above, we can see that
 
-* For marketing source, with Internet as baseline (value = 0), top 3 marketing source are
+* For marketing source, with Internet as baseline (value = 0), top 3 marketing sources are
   + Referral Friend/Family
   + Internet Website
   + Referral Physician
 
-* For insurance, with Aetna as baseline (value = 0), top 3 marketing source are
+* For insurance, with Aetna as baseline (value = 0), top 3 insurances are
   + Medicaid
   + Tricare
   + Commercial
@@ -438,25 +418,17 @@ After we train the model, we want to see how the model perform using the test da
 pred_booked <- predict(model_booked, test,type="response")
 pred_booked <- ifelse(pred_booked > 0.5, 1, 0)
 actual_booked <- as.data.frame(test$Booked)
-
 cm_booked <- cbind(pred_booked,actual_booked) %>%
   rename(predicted = 1,
          actual = 2) %>%
 mutate(predicted = as.factor(predicted))
-
 cm_booked <- conf_mat(cm_booked, actual, predicted)
-
 # pred_booked[1:20]
 # test$Booked[1:20]
-
-
 # cm_booked <- as.data.frame(table(pred_booked, test$Booked)) %>%
 #   rename(Predicted = 1,
 #          Actual = 2)
-
 tab_book <- table(pred_booked, test$Booked)
-
-
 autoplot(cm_booked, type = "heatmap") +
   scale_fill_gradient(low="#D6EAF8",high = "#2E86C1") + 
   labs(title="Prediction vs Actual Confusion Matrix",
@@ -473,18 +445,17 @@ autoplot(cm_booked, type = "heatmap") +
         plot.title = element_text(face = "bold",size=9,hjust=0.5),
         plot.caption = element_text(hjust = 0)
   ) 
-
-
 ## misclassification rate
-
 print(paste0("Misclassification Rate: ",100 - round(sum(diag(tab_book))/sum(tab_book)*100),"%"))
 print(paste0("Misclassification Rate for not booked patients: ",100 - round(tab_book[1,1]/sum(tab_book[1,])*100),"%"))
 print(paste0("Misclassification Rate for booked patients: ",100 - round(tab_book[2,2]/sum(tab_book[2,])*100),"%"))
-
-
 ```
 
 From the plot above, we can see that overall, the model has a 91% accuracy to classify patients into booked and not booked group. The model does a better job in classifying booked patients than not booked patients. For predicting not booked patients, the misclassification rate is 34%, for booked patients, it's only 8%.
+
+## Conclusion
+
+From the analysis above, we can see that patient demographics plays an important role in whether a new  patient will book appointment or not. Older female are the main targets for potential booking patients. Additionally, patients from marketing source such as **referral friends / family** and **Internet** or from insurance such as **Medicaid** and **Tricare** are more likely to book appointments. This information can be used to better target potential customers or perform better outbound call efforts by reaching out to the correct group of patients.
 
 
 
